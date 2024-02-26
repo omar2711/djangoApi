@@ -10,6 +10,8 @@ from django.http import JsonResponse
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
+import socket as sock_module
+
 
 class RegionServerViewSet(viewsets.ModelViewSet):
     queryset = RegionServer.objects.all()
@@ -42,7 +44,7 @@ class RegionServerViewSet(viewsets.ModelViewSet):
             print("Error al obtener información del disco:", e)
             return Response({"error": "Error al obtener información del disco"})
         
-import socket as sock_module
+
 
 class EnviarMensajeSocket(APIView):
     def get(self, request):
@@ -71,6 +73,33 @@ class EnviarMensajeSocket(APIView):
         except Exception as e:
             print("Error al enviar mensaje a través de socket:", e)
             return Response({'success': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class RecibirMensajeSocket(APIView):
+    def get(self, request):
+        try:
+            # Crear un socket y escuchar conexiones
+            server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            server_sock.bind(("0.0.0.0", 69))  # Escuchar en todas las interfaces en el puerto 9000
+            server_sock.listen(1)
+
+            # Aceptar la conexión entrante
+            client_sock, addr = server_sock.accept()
+
+            # Recibir el mensaje
+            mensaje_recibido = client_sock.recv(1024)
+            mensaje_recibido_decodificado = mensaje_recibido.decode()
+
+            # Cerrar la conexión
+            client_sock.close()
+            server_sock.close()
+
+            return Response({'mensaje_recibido': mensaje_recibido_decodificado}, status=status.HTTP_200_OK)
+        except Exception as e:
+            print("Error al recibir mensaje a través de socket:", e)
+            return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+
 
 class RegionServerIPViewSet(viewsets.ModelViewSet):
     queryset = RegionServer.objects.all()
