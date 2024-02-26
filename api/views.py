@@ -6,6 +6,10 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 import psutil
 import os
+from django.http import JsonResponse
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
 
 class RegionServerViewSet(viewsets.ModelViewSet):
     queryset = RegionServer.objects.all()
@@ -38,18 +42,21 @@ class RegionServerViewSet(viewsets.ModelViewSet):
             print("Error al obtener información del disco:", e)
             return Response({"error": "Error al obtener información del disco"})
         
-    def enviar_mensaje_socket(self, ip, puerto, libre, usado, total, pid):
-        try:
-            print("IP:", ip)
-            print("Puerto:", puerto)
-            print("Libre:", libre)
-            print("Usado:", usado)
-            print("Total:", total)
-            print("PID:", pid)
+import socket as sock_module
 
+class EnviarMensajeSocket(APIView):
+    def get(self, request):
+        ip = request.GET.get('ip')
+        puerto = request.GET.get('puerto')
+        libre = request.GET.get('libre')
+        usado = request.GET.get('usado')
+        total = request.GET.get('total')
+        pid = request.GET.get('pid')
+
+        try:
             # Crear un socket y conectarlo al servidor receptor
-            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.connect((ip, puerto))
+            sock = sock_module.socket(sock_module.AF_INET, sock_module.SOCK_STREAM)
+            sock.connect((ip, int(puerto)))  # Asegúrate de convertir el puerto a entero
 
             # Formatear el mensaje
             mensaje = f"Libre: {libre}, Usado: {usado}, Total: {total}, PID: {pid}"
@@ -59,8 +66,11 @@ class RegionServerViewSet(viewsets.ModelViewSet):
 
             # Cerrar la conexión
             sock.close()
+
+            return Response({'success': True}, status=status.HTTP_200_OK)
         except Exception as e:
             print("Error al enviar mensaje a través de socket:", e)
+            return Response({'success': False, 'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class RegionServerIPViewSet(viewsets.ModelViewSet):
     queryset = RegionServer.objects.all()
