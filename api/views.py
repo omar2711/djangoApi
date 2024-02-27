@@ -98,6 +98,35 @@ class RecibirMensajeSocket(APIView):
             print("Error al recibir mensaje a través de socket:", e)
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+class EnviarInfoBaseDatos(APIView):
+    def post(self, request):
+        try:
+            # Obtener los datos del cuerpo de la solicitud
+            pid = request.data.get('pid')
+            ip = request.data.get('ip')
+            port = request.data.get('port')
+            libre = request.data.get('libre')
+            utilizado = request.data.get('utilizado')
+            total = request.data.get('total')
+            
+            # Crear una nueva instancia de RegionServer con los datos recibidos
+            region_server = RegionServer.objects.create(
+                pid=pid,
+                ip=ip,
+                port=port,
+                freeSpace=libre,
+                usedSpace=utilizado,
+                totalSpace=total
+            )
+
+            # Serializar la instancia creada
+            serializer = RegionServerSerializer(region_server)
+
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            print("Error al enviar información a la base de datos:", e)
+            return Response({"error": "Error al enviar información a la base de datos"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 
 
